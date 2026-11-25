@@ -2,7 +2,7 @@
 // con localStorage. Las vistas usan solo estas funciones, así funcionan igual en los dos modos.
 import { initializeApp } from 'firebase/app'
 import {
-  getDatabase, ref, onValue, set, push, update, remove, runTransaction
+  getDatabase, ref, onValue, set, push, update, remove, runTransaction, get
 } from 'firebase/database'
 import { firebaseConfig } from './firebase.config.js'
 
@@ -63,6 +63,12 @@ export function escuchar (ruta, cb) {
   oyentes.add(o)
   cb(clonar(obtener(ruta)))
   return () => oyentes.delete(o)
+}
+
+/** Lee una ruta una sola vez (sin quedarse escuchando). */
+export async function leer (ruta) {
+  if (fb) return (await get(ref(fb, ruta))).val()
+  return clonar(obtener(ruta))
 }
 
 export function claveNueva (ruta) {

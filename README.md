@@ -11,6 +11,8 @@ una empresa de transporte.
   puerta y SS.HH. Cada asiento muestra si está libre, ocupado o libre solo en el tramo elegido.
 - **Venta por tramos en el mismo bus**: Pauza → Nasca, Ica o Lima, y de regreso Lima → Ica, Nasca
   o Pauza. Un asiento vendido Pauza → Nasca se puede volver a vender Nasca → Lima.
+- **Pasajeros frecuentes**: al escribir el DNI de alguien que ya compró, se completan solos sus
+  nombres y teléfono, y se muestra cuántos viajes hizo.
 - **Boleto para imprimir** (tamaño A5) con talón de control.
 - **Administración de la flota** (placa, marca, modelo, año, estado).
 - **Administración de choferes** (DNI, licencia, categoría, vencimiento, estado). No se puede
@@ -77,6 +79,7 @@ buses/{id}            placa, marca, modelo, anio, asientos, estado
 choferes/{id}         nombres, dni, licencia, categoria, vencimiento, telefono, estado
 viajes/{id}           fecha, hora, sentido (PL | LP), busId, choferId
 boletos/{viaje}/{id}  asiento, tipoAsiento, origen, destino, nombres, dni, telefono, precio, numero, vendidoEn
+pasajeros/{dni}       nombres, telefono, actualizado
 tarifas               Pauza_Nasca, Pauza_Ica, Pauza_Lima, Nasca_Ica, Nasca_Lima, Ica_Lima
 contadores/boleto     último número de boleto
 ```

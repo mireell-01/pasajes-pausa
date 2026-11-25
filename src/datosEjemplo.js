@@ -3,6 +3,7 @@ import { agregar, guardar, siguienteNumero } from './db.js'
 import { TARIFAS_BASE, tarifa } from './ruta.js'
 import { tipoDeAsiento } from './asientos.js'
 import { hoyISO } from './util.js'
+import { recordarPasajero } from './pasajeros.js'
 
 export async function cargarEjemplo () {
   const bus1 = await agregar('buses', {
@@ -46,6 +47,7 @@ export async function cargarEjemplo () {
       numero: await siguienteNumero(),
       vendidoEn: Date.now()
     })
+    await recordarPasajero({ ...b, telefono: '' })
   }
   return viaje1
 }

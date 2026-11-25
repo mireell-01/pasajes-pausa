@@ -8,6 +8,7 @@ import { SENTIDOS, tarifa, seCruzan } from '../ruta.js'
 import { tipoDeAsiento, TOTAL_ASIENTOS } from '../asientos.js'
 import { transaccion, claveNueva, borrar, siguienteNumero } from '../db.js'
 import { cargarEjemplo } from '../datosEjemplo.js'
+import { buscarPasajero, recordarPasajero } from '../pasajeros.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -93,6 +94,34 @@ const form = reactive({ nombres: '', dni: '', telefono: '' })
 const error = ref('')
 const enviando = ref(false)
 
+// Al completar los 8 números del DNI se buscan los datos de compras anteriores.
+const busqueda = ref({ estado: '', viajes: 0 }) // estado: '' | 'buscando' | 'encontrado' | 'nuevo'
+let autocompletado = null // datos que se llenaron solos, para borrarlos si cambia el DNI
+watch(() => form.dni, async valor => {
+  const dni = valor.trim()
+  if (autocompletado && autocompletado.dni !== dni) {
+    if (form.nombres === autocompletado.nombres) form.nombres = ''
+    if (form.telefono === autocompletado.telefono) form.telefono = ''
+    autocompletado = null
+  }
+  if (!/^\d{8}$/.test(dni)) { busqueda.value = { estado: '', viajes: 0 }; return }
+  busqueda.value = { estado: 'buscando', viajes: 0 }
+  try {
+    const p = await buscarPasajero(dni)
+    if (form.dni.trim() !== dni) return // ya escribió otro DNI
+    if (p) {
+      form.nombres = p.nombres
+      form.telefono = p.telefono
+      autocompletado = { dni, nombres: p.nombres, telefono: p.telefono }
+      busqueda.value = { estado: 'encontrado', viajes: p.viajes }
+    } else {
+      busqueda.value = { estado: 'nuevo', viajes: 0 }
+    }
+  } catch {
+    busqueda.value = { estado: '', viajes: 0 }
+  }
+})
+
 async function vender () {
   error.value = ''
   const nombres = form.nombres.trim().replace(/\s+/g, ' ')
@@ -136,6 +165,7 @@ async function vender () {
       error.value = 'Ese asiento se acaba de vender. Elija otro.'
       return
     }
+    try { await recordarPasajero(boleto) } catch { /* la venta ya quedó guardada */ }
     Object.assign(form, { nombres: '', dni: '', telefono: '' })
     router.push(`/boleto/${viajeId.value}/${id}`)
   } catch (e) {
@@ -256,19 +286,25 @@ const sinDatos = computed(() => !cargando.value && !Object.keys(viajesObj.value)
             <form v-if="asientoLibre" class="formulario" @submit.prevent="vender">
               <p class="tramo-venta">{{ origen }} → {{ destino }}</p>
               <label class="campo">
+                <span>DNI del pasajero</span>
+                <input v-model="form.dni" inputmode="numeric" maxlength="8" autocomplete="off" required />
+              </label>
+              <p v-if="busqueda.estado === 'buscando'" class="busqueda suave">Buscando pasajero…</p>
+              <p v-else-if="busqueda.estado === 'encontrado'" class="busqueda encontrado" role="status">
+                ✓ Pasajero registrado: datos completados
+                <template v-if="busqueda.viajes"> · {{ busqueda.viajes }} {{ busqueda.viajes === 1 ? 'viaje anterior' : 'viajes anteriores' }}</template>
+              </p>
+              <p v-else-if="busqueda.estado === 'nuevo'" class="busqueda nuevo" role="status">
+                Pasajero nuevo: escriba sus datos (se guardarán para la próxima vez).
+              </p>
+              <label class="campo">
                 <span>Nombres y apellidos</span>
                 <input v-model="form.nombres" autocomplete="off" maxlength="80" required />
               </label>
-              <div class="fila2">
-                <label class="campo">
-                  <span>DNI</span>
-                  <input v-model="form.dni" inputmode="numeric" maxlength="8" required />
-                </label>
-                <label class="campo">
-                  <span>Teléfono (opcional)</span>
-                  <input v-model="form.telefono" inputmode="numeric" maxlength="9" />
-                </label>
-              </div>
+              <label class="campo">
+                <span>Teléfono (opcional)</span>
+                <input v-model="form.telefono" inputmode="numeric" maxlength="9" />
+              </label>
               <label class="campo">
                 <span>Precio (S/)</span>
                 <input v-model.number="precio" type="number" min="1" step="0.5" required />

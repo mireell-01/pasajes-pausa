@@ -1,0 +1,34 @@
+{
+  "rules": {
+    ".read": true,
+    ".write": true,
+    "buses": {
+      "$bus": {
+        ".validate": "newData.hasChildren(['placa', 'marca', 'anio', 'asientos', 'estado'])",
+        "asientos": { ".validate": "newData.val() === 39" }
+      }
+    },
+    "choferes": {
+      "$chofer": {
+        ".validate": "newData.hasChildren(['nombres', 'dni', 'licencia', 'categoria', 'vencimiento', 'estado'])",
+        "dni": { ".validate": "newData.isString() && newData.val().matches(/^[0-9]{8}$/)" }
+      }
+    },
+    "viajes": {
+      "$viaje": {
+        ".validate": "newData.hasChildren(['fecha', 'hora', 'sentido', 'busId', 'choferId'])",
+        "sentido": { ".validate": "newData.val() === 'PL' || newData.val() === 'LP'" }
+      }
+    },
+    "boletos": {
+      "$viaje": {
+        "$boleto": {
+          ".validate": "newData.hasChildren(['asiento', 'origen', 'destino', 'nombres', 'dni', 'precio', 'numero'])",
+          "asiento": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 39" },
+          "dni": { ".validate": "newData.isString() && newData.val().matches(/^[0-9]{8}$/)" },
+          "precio": { ".validate": "newData.isNumber() && newData.val() > 0" }
+        }
+      }
+    }
+  }
+}
